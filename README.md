@@ -15,3 +15,11 @@ As in interception of forms to make the request as ajax and use the result HTML 
 ```
 
 If target not specified, replaces the form itself. Always "outerHTML" is used.
+
+
+
+## dev TASKS
+[x] create default logger for fail (rather explicit opt-out then opt-in logging)
+[x] fix ignore body for GET & HEAD
+[x] `ajax.submit(element)` to enable manual trigger
+[ ] implement separate fetch client to be used directly

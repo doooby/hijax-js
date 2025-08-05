@@ -1,19 +1,29 @@
 /**
- * RELEASE hijax.v1.0.js
+ * RELEASE hijax.v1.1.js
  * Hijax.js
- * https://raw.githubusercontent.com/doooby/hijax-js/refs/heads/main/dist/hijax.v1.0.js
+ * https://raw.githubusercontent.com/doooby/hijax-js/refs/heads/main/dist/hijax.v1.1.js
  */
 
 const hijax = {
   fetch: (url, options) => fetch(url, options),
-  onFail (error, response, client) {
+  submit: (element) => {
+    const form = new HijaxedForm(element)
+    if (!element.dispatchEvent(
+      new CustomEvent('hijax:before', {
+        cancelable: true,
+        detail: { form },
+      })
+    )) return
+    form.process()
+  },
+  onFail(error, response, client) {
     console.log(response, client)
     if (error) console.error(error)
   },
 }
 
 class HijaxedForm {
-  constructor (form) {
+  constructor(form) {
     this.element = form
     let target = form.dataset.hijaxTarget
     this.target = target
@@ -26,15 +36,15 @@ class HijaxedForm {
     this.includeCredentials = true
   }
 
-  async process () {
+  async process() {
     try {
-      const result = await hijax.fetch(
+      const response = await hijax.fetch(
         this.url,
         {
           method: this.method,
           credentials: (this.includeCredentials ? 'include' : undefined),
           headers: this.headers,
-          body: this.formData,
+          body: this.getSanitizedBody(),
         }
       )
       if (response.ok) {
@@ -46,22 +56,25 @@ class HijaxedForm {
       hijax.onFail?.(error, null, this)
     }
   }
+
+  getSanitizedBody() {
+    switch (this.method.toUpperCase()) {
+      case "GET":
+      case "HEAD":
+        return
+      default:
+        return this.formData
+    }
+  }
 }
 
 export default hijax
 
-document.addEventListener('DOMContentLoaded', function () {
-  document.body.addEventListener('submit', function (event) {
+document.addEventListener('DOMContentLoaded', function() {
+  document.body.addEventListener('submit', function(event) {
     if (event.target.matches('form[data-hijax]')) {
       event.preventDefault()
-      const form = new HijaxedForm(event.target)
-      if (!form.element.dispatchEvent(
-        new CustomEvent('hijax:before', {
-          cancelable: true,
-          detail: { form },
-        })
-      )) return
-      form.process()
+      hijax.submit(event.target)
     }
   })
 })
